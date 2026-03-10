@@ -233,14 +233,13 @@ export default function ShockAbsorberCalculator() {
   const [coilSpringType, setCoilSpringType] = useState('stock')         // Тип пружины
   const [usageMode, setUsageMode] = useState('mixed')                   // Режим эксплуатации
 
-  // Загрузка истории
-  const loadHistory = useCallback(async () => {
+  // Загрузка истории из localStorage
+  const loadHistory = useCallback(() => {
     try {
       setLoading(true)
-      const response = await fetch('/api/calculations')
-      const data = await response.json()
-      if (data.success) {
-        setHistory(data.data)
+      const saved = localStorage.getItem('shockCalcHistory')
+      if (saved) {
+        setHistory(JSON.parse(saved))
       }
     } catch (error) {
       console.error('Failed to load history:', error)
@@ -505,31 +504,28 @@ export default function ShockAbsorberCalculator() {
   }, [position, liftHeight, useCustom, customCompressed, customExtended, customTravel, 
       additionalWeight, leafSpringType, coilSpringType, usageMode])
 
-  const saveCalculation = async () => {
+  const saveCalculation = () => {
     if (!result) return
     
     try {
       setSaving(true)
-      const response = await fetch('/api/calculations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          position: result.position,
-          liftHeight: result.lift,
-          stockCompressed: result.stockCompressed,
-          stockExtended: result.stockExtended,
-          stockTravel: result.stockTravel,
-          newCompressed: result.newCompressed,
-          newExtended: result.newExtended,
-          newTravel: result.newTravel,
-          compatibility: result.compatibility,
-        }),
-      })
-      
-      const data = await response.json()
-      if (data.success) {
-        loadHistory()
+      const newEntry: SavedCalculation = {
+        id: Date.now().toString(),
+        position: result.position,
+        liftHeight: result.lift,
+        stockCompressed: result.stockCompressed,
+        stockExtended: result.stockExtended,
+        stockTravel: result.stockTravel,
+        newCompressed: result.newCompressed,
+        newExtended: result.newExtended,
+        newTravel: result.newTravel,
+        compatibility: result.compatibility,
+        createdAt: new Date().toISOString(),
       }
+      
+      const updatedHistory = [newEntry, ...history].slice(0, 20) // Храним последние 20
+      setHistory(updatedHistory)
+      localStorage.setItem('shockCalcHistory', JSON.stringify(updatedHistory))
     } catch (error) {
       console.error('Failed to save:', error)
     } finally {
@@ -537,10 +533,11 @@ export default function ShockAbsorberCalculator() {
     }
   }
 
-  const deleteCalculation = async (id: string) => {
+  const deleteCalculation = (id: string) => {
     try {
-      await fetch(`/api/calculations?id=${id}`, { method: 'DELETE' })
-      loadHistory()
+      const updatedHistory = history.filter(h => h.id !== id)
+      setHistory(updatedHistory)
+      localStorage.setItem('shockCalcHistory', JSON.stringify(updatedHistory))
     } catch (error) {
       console.error('Failed to delete:', error)
     }

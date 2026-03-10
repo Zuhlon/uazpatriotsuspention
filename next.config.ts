@@ -4,6 +4,7 @@ const nextConfig: NextConfig = {
   output: "export",
   distDir: "docs",
   trailingSlash: true,
+  basePath: "/uazpatriotsuspention",
   images: {
     unoptimized: true,
   },

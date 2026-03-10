@@ -1,0 +1,27 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// История расчётов амортизаторов
+model ShockCalculation {
+  id              String   @id @default(cuid())
+  position        String   // "front" или "rear"
+  liftHeight      Int      // высота лифта в мм
+  stockCompressed Int      // штатная длина сжатый
+  stockExtended   Int      // штатная длина разжатый
+  stockTravel     Int      // штатный ход
+  newCompressed   Int      // новая длина сжатый
+  newExtended     Int      // новая длина разжатый
+  newTravel       Int      // новый ход
+  compatibility   String   // "optimal", "acceptable", "critical"
+  vehicleModel    String   @default("УАЗ Патриот 2008")
+  createdAt       DateTime @default(now())
+}
